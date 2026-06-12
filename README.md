@@ -8,8 +8,9 @@ A sleek, full-stack personal finance tracker built with a modern dark fintech ae
 
 ## Live Demo
 
-Hosted publicly on Replit:
-**[https://fintrack.replit.app](https://fintrack.replit.app)** *(replace with your deployed URL)*
+**Repository:** [https://github.com/sv410/fintrack](https://github.com/sv410/fintrack)
+
+> **Deployment:** Host the API and frontend on Replit, Render, or Railway with a PostgreSQL database. Set `DATABASE_URL`, `PORT`, and `BASE_PATH=/` as environment variables. Update this section with your live URL once deployed.
 
 ---
 
@@ -68,7 +69,7 @@ fintrack/
 ### 1. Clone
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/sv410/fintrack.git
 cd fintrack
 ```
 
@@ -80,7 +81,7 @@ pnpm install
 
 ### 3. Configure environment
 
-Create a `.env` file in the repo root:
+Copy `.env.example` to `.env` in the repo root and fill in your values:
 
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/fintrack
@@ -93,25 +94,27 @@ SESSION_SECRET=your-secret-here
 pnpm --filter @workspace/db run push
 ```
 
-### 5. (Optional) Seed sample data
+### 5. Start the API server
 
 ```bash
-pnpm --filter @workspace/scripts run seed
+# Windows (PowerShell)
+$env:PORT='8080'; $env:DATABASE_URL='postgresql://user:password@localhost:5432/fintrack'; pnpm --filter @workspace/api-server run build; node artifacts/api-server/dist/index.mjs
+
+# macOS / Linux
+PORT=8080 DATABASE_URL=postgresql://user:password@localhost:5432/fintrack pnpm --filter @workspace/api-server run dev
 ```
 
-### 6. Start the API server
+### 6. Start the frontend (new terminal)
 
 ```bash
-pnpm --filter @workspace/api-server run dev
+# Windows (PowerShell)
+$env:PORT='19051'; $env:BASE_PATH='/'; pnpm --filter @workspace/finance-tracker run dev
+
+# macOS / Linux
+PORT=19051 BASE_PATH=/ pnpm --filter @workspace/finance-tracker run dev
 ```
 
-### 7. Start the frontend (new terminal)
-
-```bash
-pnpm --filter @workspace/finance-tracker run dev
-```
-
-Open **http://localhost:5173** in your browser.
+Open **http://localhost:19051** in your browser.
 
 ---
 
