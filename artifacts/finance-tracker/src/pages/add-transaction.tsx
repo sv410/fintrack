@@ -100,7 +100,7 @@ export function AddTransaction() {
       {/* Back + title */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => setLocation(-1)}
+          onClick={() => setLocation("/")}
           className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95"
           style={{ background: "hsl(225 18% 14%)", border: "1px solid hsl(225 18% 20%)", color: "hsl(215 20% 55%)" }}
         >
