@@ -1,11 +1,6 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  useListTransactions, 
+import {
+  useListTransactions,
   getListTransactionsQueryKey,
   useDeleteTransaction,
   useListCategories,
@@ -13,191 +8,260 @@ import {
   getGetSummaryQueryKey,
   getGetSpendingByCategoryQueryKey,
   getGetInsightQueryKey,
-  ListTransactionsType
+  ListTransactionsType,
 } from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/format";
 import { format } from "date-fns";
-import { Trash2, Search, FilterX, ReceiptText } from "lucide-react";
+import { Trash2, SlidersHorizontal, TrendingUp, TrendingDown, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
+
+type TypeFilter = ListTransactionsType | "all";
 
 export function Transactions() {
-  const [category, setCategory] = useState<string>("");
-  const [type, setType] = useState<ListTransactionsType | "all">("all");
-  
+  const [category, setCategory] = useState("");
+  const [type, setType] = useState<TypeFilter>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: categories } = useListCategories({
-    query: { queryKey: getListCategoriesQueryKey() }
+    query: { queryKey: getListCategoriesQueryKey() },
   });
 
-  const { data: transactions, isLoading } = useListTransactions({
+  const params = {
     category: category || undefined,
-    type: type !== "all" ? type as ListTransactionsType : undefined
-  }, {
-    query: { 
-      queryKey: getListTransactionsQueryKey({ 
-        category: category || undefined, 
-        type: type !== "all" ? type as ListTransactionsType : undefined 
-      }) 
-    }
+    type: type !== "all" ? (type as ListTransactionsType) : undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+  };
+
+  const { data: transactions, isLoading } = useListTransactions(params, {
+    query: { queryKey: getListTransactionsQueryKey(params) },
   });
 
   const deleteTx = useDeleteTransaction({
     mutation: {
       onSuccess: () => {
-        toast({
-          title: "Transaction deleted",
-          description: "Your record has been removed.",
-        });
-        // Invalidate everything to keep UI in sync
+        toast({ title: "Transaction deleted" });
         queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetSpendingByCategoryQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetInsightQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListCategoriesQueryKey() });
       },
-      onError: () => {
-        toast({
-          title: "Failed to delete",
-          description: "Something went wrong.",
-          variant: "destructive"
-        });
-      }
-    }
+      onError: () =>
+        toast({ title: "Failed to delete", variant: "destructive" }),
+    },
   });
+
+  const hasFilters = !!category || type !== "all" || !!dateFrom || !!dateTo;
+
+  const clearFilters = () => {
+    setCategory("");
+    setType("all");
+    setDateFrom("");
+    setDateTo("");
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      {/* Header */}
+      <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-3xl md:text-4xl font-serif font-medium text-foreground tracking-tight mb-2">Transactions</h1>
-          <p className="text-muted-foreground text-lg">Your complete financial history.</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+            History
+          </p>
+          <h1 className="text-3xl font-display font-bold text-foreground">
+            Transactions
+          </h1>
+        </div>
+        <Link href="/add">
+          <button className="hidden sm:flex items-center gap-2 text-sm text-primary font-semibold hover:underline underline-offset-4">
+            + Add new
+          </button>
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <div className="rounded-2xl border border-card-border bg-card p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground">Filters</span>
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-3 h-3" /> Clear all
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Type toggle */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground font-medium">Type</label>
+            <div className="flex rounded-lg border border-border overflow-hidden h-9 text-sm">
+              {(["all", "income", "expense"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setType(t)}
+                  className={cn(
+                    "flex-1 text-xs font-medium transition-colors",
+                    type === t
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  {t === "all" ? "All" : t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Category */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground font-medium">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value === "__all__" ? "" : e.target.value)}
+              className="h-9 rounded-lg border border-border bg-background text-sm text-foreground px-2 focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="__all__">All categories</option>
+              {categories?.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date From */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground font-medium">From date</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="h-9 rounded-lg border border-border bg-background text-sm text-foreground px-2 focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+
+          {/* Date To */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground font-medium">To date</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="h-9 rounded-lg border border-border bg-background text-sm text-foreground px-2 focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
         </div>
       </div>
 
-      <Card className="border-border/50 shadow-sm bg-card overflow-hidden">
-        <div className="p-4 border-b border-border bg-muted/30 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 space-y-1">
-            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Type</Label>
-            <Select 
-              value={type} 
-              onValueChange={(val: any) => setType(val)}
-            >
-              <SelectTrigger className="bg-background">
-                <SelectValue placeholder="All types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="expense">Expense</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1 space-y-1">
-            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Category</Label>
-            <Select 
-              value={category} 
-              onValueChange={setCategory}
-            >
-              <SelectTrigger className="bg-background">
-                <SelectValue placeholder="All categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all_categories_dummy">
-                  <span className="text-muted-foreground">All Categories</span>
-                </SelectItem>
-                {categories?.map((cat) => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-end">
-            <Button 
-              variant="outline" 
-              onClick={() => { setCategory(""); setType("all"); }}
-              className="w-full sm:w-auto"
-              disabled={!category && type === "all"}
-            >
-              <FilterX className="w-4 h-4 mr-2" /> Clear
-            </Button>
-          </div>
-        </div>
-
-        <div className="divide-y divide-border">
-          {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="p-4 flex items-center justify-between">
-                <div className="flex gap-4 items-center">
-                  <Skeleton className="h-10 w-10 rounded-full" />
+      {/* Transaction list */}
+      <div className="rounded-2xl border border-card-border bg-card overflow-hidden">
+        {isLoading ? (
+          <div className="divide-y divide-border">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-muted animate-pulse" />
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-20" />
+                    <div className="h-3.5 w-28 bg-muted rounded animate-pulse" />
+                    <div className="h-3 w-20 bg-muted rounded animate-pulse" />
                   </div>
                 </div>
-                <Skeleton className="h-6 w-20" />
+                <div className="h-4 w-16 bg-muted rounded animate-pulse" />
               </div>
-            ))
-          ) : transactions?.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Search className="w-8 h-8 text-muted-foreground/50" />
-              </div>
-              <h3 className="text-lg font-medium text-foreground">No transactions found</h3>
-              <p className="mt-1">Try adjusting your filters or adding a new entry.</p>
+            ))}
+          </div>
+        ) : !transactions?.length ? (
+          <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
+            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+              <SlidersHorizontal className="w-6 h-6 opacity-40" />
             </div>
-          ) : (
-            transactions?.map((tx) => (
-              <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-                    tx.type === 'income' ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                  )}>
-                    <ReceiptText className="w-5 h-5" />
+            <div className="text-center">
+              <p className="font-semibold text-foreground text-sm">No transactions found</p>
+              <p className="text-sm mt-1">
+                {hasFilters ? "Try clearing your filters." : "Add your first transaction to get started."}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {transactions.map((tx) => (
+              <div
+                key={tx.id}
+                className="group flex items-center justify-between px-5 py-4 hover:bg-accent/30 transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className={cn(
+                      "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
+                      tx.type === "income"
+                        ? "bg-income/10"
+                        : "bg-expense/10"
+                    )}
+                  >
+                    {tx.type === "income" ? (
+                      <TrendingUp className="w-4 h-4 text-income" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 text-expense" />
+                    )}
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground flex items-center gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
                       {tx.category}
                     </p>
-                    <div className="flex items-center text-xs text-muted-foreground gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
                       <span>{format(new Date(tx.date), "MMM d, yyyy")}</span>
                       {tx.note && (
                         <>
-                          <span>•</span>
-                          <span className="truncate max-w-[150px] sm:max-w-[300px]">{tx.note}</span>
+                          <span className="opacity-40">·</span>
+                          <span className="truncate max-w-[180px]">{tx.note}</span>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className={cn(
-                    "font-medium font-serif",
-                    tx.type === 'income' ? "text-foreground" : "text-foreground"
-                  )}>
-                    {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  <span
+                    className={cn(
+                      "text-sm font-display font-bold tabular-nums",
+                      tx.type === "income" ? "text-income" : "text-expense"
+                    )}
+                  >
+                    {tx.type === "income" ? "+" : "−"}
+                    {formatCurrency(tx.amount)}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                  <button
                     onClick={() => deleteTx.mutate({ id: tx.id })}
                     disabled={deleteTx.isPending}
+                    className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-expense hover:bg-expense/10 transition-all"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {transactions && transactions.length > 0 && (
+        <p className="text-center text-xs text-muted-foreground">
+          Showing {transactions.length} transaction{transactions.length !== 1 ? "s" : ""}
+          {hasFilters ? " (filtered)" : ""}
+        </p>
+      )}
     </div>
   );
 }

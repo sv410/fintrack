@@ -1,207 +1,325 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/format";
-import { 
-  useGetSummary, 
+import {
+  useGetSummary,
   getGetSummaryQueryKey,
   useGetSpendingByCategory,
   getGetSpendingByCategoryQueryKey,
   useGetInsight,
-  getGetInsightQueryKey
+  getGetInsightQueryKey,
 } from "@workspace/api-client-react";
-import { AlertCircle, ArrowDownRight, ArrowUpRight, TrendingUp, CheckCircle2, Info } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  ArrowRight,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 import { cn } from "@/lib/utils";
+import { Link } from "wouter";
 
 const CHART_COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  "hsl(152 60% 47%)",
+  "hsl(221 70% 63%)",
+  "hsl(38 92% 60%)",
+  "hsl(280 60% 65%)",
+  "hsl(350 65% 60%)",
+  "hsl(180 55% 50%)",
 ];
 
+function StatCard({
+  label,
+  value,
+  sub,
+  accent,
+  negative,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  accent?: boolean;
+  negative?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border p-6 flex flex-col gap-3",
+        accent
+          ? "bg-primary/10 border-primary/30"
+          : "bg-card border-card-border"
+      )}
+    >
+      <p className="text-sm text-muted-foreground font-medium">{label}</p>
+      <p
+        className={cn(
+          "text-3xl font-display font-bold tracking-tight",
+          negative ? "text-expense" : accent ? "text-primary" : "text-foreground"
+        )}
+      >
+        {value}
+      </p>
+      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+    </div>
+  );
+}
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-card border border-card-border rounded-xl px-4 py-3 shadow-xl">
+        <p className="text-sm font-semibold text-foreground mb-1">{label}</p>
+        <p className="text-sm text-primary font-medium">
+          {formatCurrency(payload[0].value)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function Dashboard() {
-  const { data: summary, isLoading: isLoadingSummary } = useGetSummary({
-    query: { queryKey: getGetSummaryQueryKey() }
+  const { data: summary, isLoading: loadingSum } = useGetSummary({
+    query: { queryKey: getGetSummaryQueryKey() },
   });
-  const { data: spending, isLoading: isLoadingSpending } = useGetSpendingByCategory({
-    query: { queryKey: getGetSpendingByCategoryQueryKey() }
+  const { data: spending, isLoading: loadingSpend } = useGetSpendingByCategory({
+    query: { queryKey: getGetSpendingByCategoryQueryKey() },
   });
-  const { data: insight, isLoading: isLoadingInsight } = useGetInsight({
-    query: { queryKey: getGetInsightQueryKey() }
+  const { data: insight, isLoading: loadingInsight } = useGetInsight({
+    query: { queryKey: getGetInsightQueryKey() },
   });
+
+  const insightIcon =
+    insight?.severity === "warning" ? (
+      <AlertTriangle className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+    ) : insight?.severity === "positive" ? (
+      <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+    ) : (
+      <Info className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+    );
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl md:text-4xl font-serif font-medium text-foreground tracking-tight mb-2">Overview</h1>
-        <p className="text-muted-foreground text-lg">A clear view of your financial state.</p>
+      {/* Header */}
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+            Overview
+          </p>
+          <h1 className="text-3xl font-display font-bold text-foreground">
+            Your Finances
+          </h1>
+        </div>
+        <Link href="/add">
+          <button className="hidden sm:flex items-center gap-2 text-sm text-primary font-semibold hover:underline underline-offset-4">
+            Add transaction <ArrowRight className="w-4 h-4" />
+          </button>
+        </Link>
       </div>
 
-      {isLoadingSummary || !summary ? (
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="border-border/50 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-4 rounded-full" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-32 mb-1" />
-              </CardContent>
-            </Card>
+      {/* Summary Cards */}
+      {loadingSum ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl border border-card-border bg-card p-6 h-32 animate-pulse"
+            />
           ))}
         </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-border/50 shadow-sm overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <ArrowDownRight className="w-16 h-16 text-foreground" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={cn(
-                "text-3xl font-bold font-serif tracking-tight",
-                summary.netBalance < 0 ? "text-destructive" : "text-foreground"
-              )}>
-                {formatCurrency(summary.netBalance)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {summary.transactionCount} total transactions
-              </p>
-            </CardContent>
-          </Card>
+      ) : summary ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Net Balance"
+            value={formatCurrency(summary.netBalance)}
+            sub={`${summary.transactionCount} transactions`}
+            accent={summary.netBalance >= 0}
+            negative={summary.netBalance < 0}
+          />
+          <StatCard
+            label="Total Income"
+            value={formatCurrency(summary.totalIncome)}
+            sub="All-time earnings"
+          />
+          <StatCard
+            label="Total Expenses"
+            value={formatCurrency(summary.totalExpense)}
+            sub="All-time spending"
+          />
+          <StatCard
+            label="Top Category"
+            value={summary.topSpendingCategory ?? "—"}
+            sub="Highest spend category"
+          />
+        </div>
+      ) : null}
 
-          <Card className="border-border/50 shadow-sm overflow-hidden relative">
-             <div className="absolute top-0 right-0 p-4 opacity-5">
-              <ArrowUpRight className="w-16 h-16 text-foreground" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Income</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold font-serif tracking-tight text-foreground">
-                {formatCurrency(summary.totalIncome)}
-              </div>
-            </CardContent>
-          </Card>
+      {/* Chart + Insight */}
+      <div className="grid gap-6 lg:grid-cols-5">
+        {/* Bar Chart */}
+        <div className="lg:col-span-3 rounded-2xl border border-card-border bg-card p-6">
+          <div className="mb-6">
+            <h2 className="text-base font-display font-semibold text-foreground">
+              Spending by Category
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Expense breakdown across all categories
+            </p>
+          </div>
 
-          <Card className="border-border/50 shadow-sm overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-5">
-              <TrendingUp className="w-16 h-16 text-foreground" />
+          {loadingSpend ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
             </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Expenses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold font-serif tracking-tight text-foreground">
-                {formatCurrency(summary.totalExpense)}
+          ) : !spending || spending.length === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-3">
+              <TrendingDown className="w-10 h-10 opacity-30" />
+              <p className="text-sm">No expense data yet</p>
+            </div>
+          ) : (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={spending}
+                  margin={{ top: 4, right: 4, left: -16, bottom: 0 }}
+                  barSize={28}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(220 20% 18%)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="category"
+                    tick={{ fill: "hsl(215 20% 55%)", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "hsl(215 20% 55%)", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) =>
+                      v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`
+                    }
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(220 20% 20%)" }} />
+                  <Bar dataKey="total" radius={[6, 6, 0, 0]}>
+                    {spending.map((_, i) => (
+                      <Cell
+                        key={i}
+                        fill={CHART_COLORS[i % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Right column: income vs expense + insight */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          {/* Income vs Expense mini cards */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-card-border bg-card p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-income/10 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-income" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">Income</span>
               </div>
-              {summary.topSpendingCategory && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Top spend: {summary.topSpendingCategory}
+              {loadingSum ? (
+                <div className="h-6 w-20 bg-muted rounded animate-pulse" />
+              ) : (
+                <p className="text-xl font-display font-bold text-income">
+                  {formatCurrency(summary?.totalIncome ?? 0)}
                 </p>
               )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            </div>
+            <div className="rounded-2xl border border-card-border bg-card p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-expense/10 flex items-center justify-center">
+                  <TrendingDown className="w-4 h-4 text-expense" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">Expenses</span>
+              </div>
+              {loadingSum ? (
+                <div className="h-6 w-20 bg-muted rounded animate-pulse" />
+              ) : (
+                <p className="text-xl font-display font-bold text-expense">
+                  {formatCurrency(summary?.totalExpense ?? 0)}
+                </p>
+              )}
+            </div>
+          </div>
 
-      <div className="grid gap-6 md:grid-cols-7">
-        <Card className="md:col-span-4 border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-serif">Spending by Category</CardTitle>
-            <CardDescription>Where your money goes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoadingSpending || !spending ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Skeleton className="h-[200px] w-[200px] rounded-full" />
-              </div>
-            ) : spending.length === 0 ? (
-              <div className="h-[300px] flex items-center justify-center flex-col text-muted-foreground">
-                <Info className="w-8 h-8 mb-2 opacity-50" />
-                <p>No spending data yet.</p>
-              </div>
-            ) : (
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={spending}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={5}
-                      dataKey="total"
-                      nameKey="category"
-                      stroke="none"
-                    >
-                      {spending.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: number) => formatCurrency(value)}
-                      contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))' }}
-                    />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {/* Insight Card */}
+          <div className="flex-1 rounded-2xl border border-card-border bg-card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Wallet className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-sm font-display font-semibold text-foreground">
+                Spending Insight
+              </h2>
+            </div>
 
-        <Card className="md:col-span-3 border-border/50 shadow-sm bg-primary/5 flex flex-col justify-center">
-          <CardHeader>
-            <CardTitle className="font-serif">Insight</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoadingInsight || !insight ? (
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-                <Skeleton className="h-4 w-4/6" />
+            {loadingInsight ? (
+              <div className="space-y-3">
+                {[80, 65, 50].map((w, i) => (
+                  <div
+                    key={i}
+                    className="h-3 bg-muted rounded-full animate-pulse"
+                    style={{ width: `${w}%` }}
+                  />
+                ))}
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className={cn(
-                  "p-4 rounded-xl flex items-start gap-3",
-                  insight.severity === 'warning' ? "bg-destructive/10 text-destructive-foreground" :
-                  insight.severity === 'positive' ? "bg-primary/20 text-primary-foreground" :
-                  "bg-muted text-foreground"
-                )}>
-                  <div className="mt-0.5">
-                    {insight.severity === 'warning' ? <AlertCircle className="w-5 h-5 text-destructive" /> :
-                     insight.severity === 'positive' ? <CheckCircle2 className="w-5 h-5 text-primary" /> :
-                     <Info className="w-5 h-5 text-foreground" />}
-                  </div>
+            ) : insight ? (
+              <div
+                className={cn(
+                  "rounded-xl p-4",
+                  insight.severity === "warning"
+                    ? "bg-yellow-400/5 border border-yellow-400/20"
+                    : insight.severity === "positive"
+                    ? "bg-primary/5 border border-primary/20"
+                    : "bg-muted/50 border border-border"
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  {insightIcon}
                   <div>
-                    <h4 className={cn("font-medium mb-1", 
-                      insight.severity === 'warning' ? "text-destructive" :
-                      insight.severity === 'positive' ? "text-primary" :
-                      "text-foreground"
-                    )}>
-                      {insight.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </h4>
-                    <p className={cn("text-sm leading-relaxed", 
-                      insight.severity === 'warning' ? "text-destructive/90" :
-                      insight.severity === 'positive' ? "text-primary/90" :
-                      "text-foreground/80"
-                    )}>
+                    <p
+                      className={cn(
+                        "text-sm font-semibold mb-1",
+                        insight.severity === "warning"
+                          ? "text-yellow-400"
+                          : insight.severity === "positive"
+                          ? "text-primary"
+                          : "text-foreground"
+                      )}
+                    >
+                      {insight.type
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {insight.message}
                     </p>
                   </div>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );
