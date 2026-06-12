@@ -8,9 +8,71 @@ A sleek, full-stack personal finance tracker built with a modern dark fintech ae
 
 ## Live Demo
 
-**Repository:** [https://github.com/sv410/fintrack](https://github.com/sv410/fintrack)
+| | URL |
+|---|---|
+| **Frontend** | [https://fintrack-3yxb.onrender.com](https://fintrack-3yxb.onrender.com) |
+| **API** | [https://fintracks-v8gr.onrender.com/api/healthz](https://fintracks-v8gr.onrender.com/api/healthz) |
+| **Repository** | [https://github.com/sv410/fintrack](https://github.com/sv410/fintrack) |
 
-> **Deployment:** Host the API and frontend on Replit, Render, or Railway with a PostgreSQL database. Set `DATABASE_URL`, `PORT`, and `BASE_PATH=/` as environment variables. Update this section with your live URL once deployed.
+---
+
+## Deploy on Render
+
+This app needs **three resources** on [Render](https://render.com): a PostgreSQL database, a **Web Service** (API), and a **Static Site** (frontend).
+
+### 1. PostgreSQL database
+
+1. **New → PostgreSQL** (Free plan)
+2. Name it `fintrack-db`
+3. Copy the **Internal Database URL** (use this for `DATABASE_URL`)
+
+### 2. Web Service — API (`fintracks`)
+
+| Setting | Value |
+|---|---|
+| **Type** | Web Service |
+| **Runtime** | Node |
+| **Build Command** | `pnpm install --frozen-lockfile && pnpm run build:api` |
+| **Start Command** | `pnpm start` |
+| **Health Check Path** | `/api/healthz` |
+
+**Environment variables:**
+
+| Key | Value |
+|---|---|
+| `DATABASE_URL` | Internal Database URL from step 1 |
+| `NODE_ENV` | `production` |
+
+> `build:api` builds the Express server and auto-runs `db:push` when `DATABASE_URL` is set.
+
+Verify: open `https://<your-api>.onrender.com/api/healthz` → `{"status":"ok"}`
+
+### 3. Static Site — Frontend (`fintrack`)
+
+| Setting | Value |
+|---|---|
+| **Type** | Static Site |
+| **Build Command** | `pnpm install --frozen-lockfile && pnpm run build:static` |
+| **Publish Directory** | `artifacts/finance-tracker/dist/public` |
+
+**Environment variables:**
+
+| Key | Value |
+|---|---|
+| `BASE_PATH` | `/` |
+
+**Redirects / Rewrites** (Settings → Redirects/Rewrites):
+
+| Source | Destination | Action |
+|---|---|---|
+| `/api/*` | `https://fintracks-v8gr.onrender.com/api/*` | Rewrite |
+| `/*` | `/index.html` | Rewrite |
+
+> Replace the API URL above if your Web Service has a different hostname.
+
+### One-click deploy (optional)
+
+Use **New → Blueprint** and connect `sv410/fintrack`. The repo includes a `render.yaml` with these settings preconfigured.
 
 ---
 
@@ -91,8 +153,10 @@ SESSION_SECRET=your-secret-here
 ### 4. Push the database schema
 
 ```bash
-pnpm --filter @workspace/db run push
+pnpm run db:push
 ```
+
+Or set `DATABASE_URL` and run `pnpm run build:api` (schema push runs automatically when the env var is present).
 
 ### 5. Start the API server
 
