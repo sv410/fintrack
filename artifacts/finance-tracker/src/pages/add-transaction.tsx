@@ -181,9 +181,12 @@ export function AddTransaction() {
                           fontWeight: 700,
                           letterSpacing: "-0.02em",
                         }}
-                        onFocus={() => setFocused("amount")}
-                        onBlur={() => setFocused(null)}
                         {...field}
+                        onFocus={() => setFocused("amount")}
+                        onBlur={() => {
+                          field.onBlur();
+                          setFocused(null);
+                        }}
                       />
                     </div>
                   </FormControl>
@@ -203,9 +206,12 @@ export function AddTransaction() {
                           placeholder="e.g. Groceries"
                           list="cat-list"
                           style={getStyle("category")}
-                          onFocus={() => setFocused("category")}
-                          onBlur={() => setFocused(null)}
                           {...field}
+                          onFocus={() => setFocused("category")}
+                          onBlur={() => {
+                            field.onBlur();
+                            setFocused(null);
+                          }}
                         />
                         <datalist id="cat-list">
                           {categories?.map(c => <option key={c} value={c} />)}
@@ -223,9 +229,12 @@ export function AddTransaction() {
                       <input
                         type="date"
                         style={getStyle("date")}
-                        onFocus={() => setFocused("date")}
-                        onBlur={() => setFocused(null)}
                         {...field}
+                        onFocus={() => setFocused("date")}
+                        onBlur={() => {
+                          field.onBlur();
+                          setFocused(null);
+                        }}
                       />
                     </FormControl>
                   </Field>
@@ -242,9 +251,12 @@ export function AddTransaction() {
                       type="text"
                       placeholder="What was this for?"
                       style={getStyle("note")}
-                      onFocus={() => setFocused("note")}
-                      onBlur={() => setFocused(null)}
                       {...field}
+                      onFocus={() => setFocused("note")}
+                      onBlur={() => {
+                        field.onBlur();
+                        setFocused(null);
+                      }}
                     />
                   </FormControl>
                 </Field>
