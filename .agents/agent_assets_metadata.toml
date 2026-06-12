@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "5EPh87Vjkvhds9Nkacot3"
+uri = "file://README.md"
+type = "text"
+title = "README — Take-Home Assignment"

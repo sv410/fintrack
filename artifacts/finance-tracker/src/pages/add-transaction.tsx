@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import {
   useCreateTransaction, useListCategories, getListCategoriesQueryKey,
   getListTransactionsQueryKey, getGetSummaryQueryKey,
@@ -12,8 +12,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ArrowLeft, TrendingUp, TrendingDown, Check, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useCurrency } from "@/contexts/currency-context";
 
 const schema = z.object({
   amount: z.coerce.number().positive({ message: "Must be greater than 0" }),
@@ -24,24 +24,6 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-const fieldStyle: React.CSSProperties = {
-  height: "48px",
-  borderRadius: "12px",
-  border: "1px solid hsl(225 18% 18%)",
-  background: "hsl(230 25% 7%)",
-  color: "hsl(210 40% 97%)",
-  fontSize: "0.9rem",
-  padding: "0 14px",
-  width: "100%",
-  outline: "none",
-  transition: "border-color 0.15s, box-shadow 0.15s",
-};
-
-const fieldFocusStyle: React.CSSProperties = {
-  borderColor: "hsl(160 80% 50% / 0.5)",
-  boxShadow: "0 0 0 3px hsl(160 80% 50% / 0.08)",
-};
 
 function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
   return (
@@ -59,6 +41,7 @@ export function AddTransaction() {
   const { toast } = useToast();
   const [done, setDone] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
+  const { currency } = useCurrency();
 
   const { data: categories } = useListCategories({ query: { queryKey: getListCategoriesQueryKey() } });
 
@@ -84,20 +67,35 @@ export function AddTransaction() {
 
   const txType = form.watch("type");
   const isIncome = txType === "income";
-
   const accentColor = isIncome ? "hsl(160 80% 50%)" : "hsl(0 75% 58%)";
-  const accentBg = isIncome ? "hsl(160 80% 50% / 0.1)" : "hsl(0 75% 58% / 0.1)";
+
+  const baseInput: React.CSSProperties = {
+    height: "48px",
+    borderRadius: "12px",
+    border: `1px solid ${focused ? (isIncome ? "hsl(160 80% 50% / 0.5)" : "hsl(0 75% 58% / 0.3)") : "hsl(225 18% 18%)"}`,
+    background: "hsl(230 25% 7%)",
+    color: "hsl(210 40% 97%)",
+    fontSize: "0.9rem",
+    padding: "0 14px",
+    width: "100%",
+    outline: "none",
+    transition: "border-color 0.15s, box-shadow 0.15s",
+  };
+
+  const focusedStyle: React.CSSProperties = focused
+    ? { boxShadow: `0 0 0 3px ${isIncome ? "hsl(160 80% 50% / 0.08)" : "hsl(0 75% 58% / 0.06)"}` }
+    : {};
+
+  function getStyle(name: string): React.CSSProperties {
+    return focused === name ? { ...baseInput, ...focusedStyle } : baseInput;
+  }
 
   function onSubmit(data: FormValues) {
     createTx.mutate({ data });
   }
 
-  const getFocusStyle = (name: string) =>
-    focused === name ? { ...fieldStyle, ...fieldFocusStyle } : fieldStyle;
-
   return (
     <div className="max-w-lg mx-auto space-y-6 pt-1">
-      {/* Back + title */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => setLocation("/")}
@@ -112,7 +110,6 @@ export function AddTransaction() {
         </div>
       </div>
 
-      {/* Card */}
       <div
         className="rounded-2xl p-6"
         style={{
@@ -126,179 +123,159 @@ export function AddTransaction() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
             {/* Type toggle */}
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Type</label>
-                  <FormControl>
-                    <div className="grid grid-cols-2 gap-3 mt-2">
-                      {(["expense", "income"] as const).map(t => {
-                        const active = field.value === t;
-                        const tColor = t === "income" ? "hsl(160 80% 50%)" : "hsl(0 75% 58%)";
-                        const tBg = t === "income" ? "hsl(160 80% 50% / 0.12)" : "hsl(0 75% 58% / 0.12)";
-                        const tBorder = t === "income" ? "hsl(160 80% 50% / 0.35)" : "hsl(0 75% 58% / 0.35)";
-                        return (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => field.onChange(t)}
-                            className="flex items-center justify-center gap-2 h-12 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-95"
-                            style={
-                              active
-                                ? { background: tBg, border: `1px solid ${tBorder}`, color: tColor }
-                                : { background: "hsl(230 25% 7%)", border: "1px solid hsl(225 18% 18%)", color: "hsl(215 20% 50%)" }
-                            }
-                          >
-                            {t === "income"
-                              ? <TrendingUp className="w-4 h-4" style={active ? { color: tColor } : {}} />
-                              : <TrendingDown className="w-4 h-4" style={active ? { color: tColor } : {}} />}
-                            {t.charAt(0).toUpperCase() + t.slice(1)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormField control={form.control} name="type" render={({ field }) => (
+              <FormItem>
+                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Type</label>
+                <FormControl>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    {(["expense", "income"] as const).map(t => {
+                      const active = field.value === t;
+                      const tColor = t === "income" ? "hsl(160 80% 50%)" : "hsl(0 75% 58%)";
+                      const tBg = t === "income" ? "hsl(160 80% 50% / 0.12)" : "hsl(0 75% 58% / 0.12)";
+                      const tBorder = t === "income" ? "hsl(160 80% 50% / 0.35)" : "hsl(0 75% 58% / 0.35)";
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => field.onChange(t)}
+                          className="flex items-center justify-center gap-2 h-12 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-95"
+                          style={active
+                            ? { background: tBg, border: `1px solid ${tBorder}`, color: tColor }
+                            : { background: "hsl(230 25% 7%)", border: "1px solid hsl(225 18% 18%)", color: "hsl(215 20% 50%)" }}
+                        >
+                          {t === "income"
+                            ? <TrendingUp className="w-4 h-4" style={active ? { color: tColor } : {}} />
+                            : <TrendingDown className="w-4 h-4" style={active ? { color: tColor } : {}} />}
+                          {t.charAt(0).toUpperCase() + t.slice(1)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
 
             {/* Amount */}
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
+            <FormField control={form.control} name="amount" render={({ field }) => (
+              <FormItem>
+                <Field label="Amount" error={form.formState.errors.amount?.message}>
+                  <FormControl>
+                    <div className="relative">
+                      <span
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold select-none z-10"
+                        style={{ color: accentColor }}
+                      >
+                        {currency.symbol}
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        placeholder="0.00"
+                        style={{
+                          ...getStyle("amount"),
+                          paddingLeft: currency.symbol.length > 1 ? "40px" : "28px",
+                          fontSize: "1.25rem",
+                          fontFamily: "var(--app-font-display)",
+                          fontWeight: 700,
+                          letterSpacing: "-0.02em",
+                        }}
+                        onFocus={() => setFocused("amount")}
+                        onBlur={() => setFocused(null)}
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                </Field>
+              </FormItem>
+            )} />
+
+            {/* Category + Date */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem>
-                  <Field label="Amount" error={form.formState.errors.amount?.message}>
+                  <Field label="Category" error={form.formState.errors.category?.message}>
                     <FormControl>
-                      <div className="relative">
-                        <span
-                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold select-none"
-                          style={{ color: accentColor }}
-                        >
-                          $
-                        </span>
+                      <div>
                         <input
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          placeholder="0.00"
-                          style={{
-                            ...getFocusStyle("amount"),
-                            paddingLeft: "28px",
-                            fontSize: "1.25rem",
-                            fontFamily: "var(--app-font-display)",
-                            fontWeight: 700,
-                            letterSpacing: "-0.02em",
-                          }}
-                          onFocus={() => setFocused("amount")}
+                          type="text"
+                          placeholder="e.g. Groceries"
+                          list="cat-list"
+                          style={getStyle("category")}
+                          onFocus={() => setFocused("category")}
                           onBlur={() => setFocused(null)}
                           {...field}
                         />
+                        <datalist id="cat-list">
+                          {categories?.map(c => <option key={c} value={c} />)}
+                        </datalist>
                       </div>
                     </FormControl>
                   </Field>
                 </FormItem>
-              )}
-            />
+              )} />
 
-            {/* Category + Date */}
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <Field label="Category" error={form.formState.errors.category?.message}>
-                      <FormControl>
-                        <div>
-                          <input
-                            type="text"
-                            placeholder="e.g. Groceries"
-                            list="cat-list"
-                            style={getFocusStyle("category")}
-                            onFocus={() => setFocused("category")}
-                            onBlur={() => setFocused(null)}
-                            {...field}
-                          />
-                          <datalist id="cat-list">
-                            {categories?.map(c => <option key={c} value={c} />)}
-                          </datalist>
-                        </div>
-                      </FormControl>
-                    </Field>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <Field label="Date" error={form.formState.errors.date?.message}>
-                      <FormControl>
-                        <input
-                          type="date"
-                          style={getFocusStyle("date")}
-                          onFocus={() => setFocused("date")}
-                          onBlur={() => setFocused(null)}
-                          {...field}
-                        />
-                      </FormControl>
-                    </Field>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Note */}
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
+              <FormField control={form.control} name="date" render={({ field }) => (
                 <FormItem>
-                  <Field label="Note (optional)">
+                  <Field label="Date" error={form.formState.errors.date?.message}>
                     <FormControl>
                       <input
-                        type="text"
-                        placeholder="What was this for?"
-                        style={getFocusStyle("note")}
-                        onFocus={() => setFocused("note")}
+                        type="date"
+                        style={getStyle("date")}
+                        onFocus={() => setFocused("date")}
                         onBlur={() => setFocused(null)}
                         {...field}
                       />
                     </FormControl>
                   </Field>
                 </FormItem>
-              )}
-            />
+              )} />
+            </div>
+
+            {/* Note */}
+            <FormField control={form.control} name="note" render={({ field }) => (
+              <FormItem>
+                <Field label="Note (optional)">
+                  <FormControl>
+                    <input
+                      type="text"
+                      placeholder="What was this for?"
+                      style={getStyle("note")}
+                      onFocus={() => setFocused("note")}
+                      onBlur={() => setFocused(null)}
+                      {...field}
+                    />
+                  </FormControl>
+                </Field>
+              </FormItem>
+            )} />
+
+            {/* Current currency hint */}
+            <p className="text-xs text-muted-foreground -mt-1">
+              Amounts are displayed in {currency.label} ({currency.code}). Change currency from the top nav.
+            </p>
 
             {/* Submit */}
-            <div className="pt-1">
-              <button
-                type="submit"
-                disabled={createTx.isPending || done}
-                className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98]"
-                style={{
-                  background: done
-                    ? "hsl(160 80% 50%)"
-                    : `linear-gradient(135deg, ${accentColor}, ${isIncome ? "hsl(160 80% 38%)" : "hsl(0 75% 45%)"})`,
-                  color: done || isIncome ? "hsl(230 25% 6%)" : "white",
-                  boxShadow: done ? "none" : `0 0 24px ${accentColor.replace(")", " / 0.3)")}`,
-                  opacity: createTx.isPending && !done ? 0.9 : 1,
-                }}
-              >
-                {done ? (
-                  <><Check className="w-4 h-4" strokeWidth={3} /> Saved!</>
-                ) : createTx.isPending ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-                ) : (
-                  `Save ${isIncome ? "Income" : "Expense"}`
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={createTx.isPending || done}
+              className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98]"
+              style={{
+                background: done
+                  ? "hsl(160 80% 50%)"
+                  : `linear-gradient(135deg, ${accentColor}, ${isIncome ? "hsl(160 80% 38%)" : "hsl(0 75% 45%)"})`,
+                color: done || isIncome ? "hsl(230 25% 6%)" : "white",
+                boxShadow: done ? "none" : `0 0 24px ${accentColor.replace(")", " / 0.3)")}`,
+                opacity: createTx.isPending && !done ? 0.9 : 1,
+              }}
+            >
+              {done
+                ? <><Check className="w-4 h-4" strokeWidth={3} /> Saved!</>
+                : createTx.isPending
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                : `Save ${isIncome ? "Income" : "Expense"}`}
+            </button>
 
           </form>
         </Form>

@@ -5,8 +5,8 @@ import {
   getGetSummaryQueryKey, getGetSpendingByCategoryQueryKey, getGetInsightQueryKey,
   ListTransactionsType,
 } from "@workspace/api-client-react";
-import { formatCurrency } from "@/lib/format";
-import { format } from "date-fns";
+import { useCurrency } from "@/contexts/currency-context";
+import { format as dateFormat } from "date-fns";
 import { Trash2, TrendingUp, TrendingDown, X, SlidersHorizontal, Plus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,7 @@ export function Transactions() {
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { format } = useCurrency();
 
   const { data: categories } = useListCategories({ query: { queryKey: getListCategoriesQueryKey() } });
 
@@ -110,20 +111,13 @@ export function Transactions() {
       {/* Filters */}
       <div
         className="rounded-2xl p-4"
-        style={{
-          background: "hsl(228 22% 10% / 0.8)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid hsl(225 18% 16% / 0.8)",
-        }}
+        style={{ background: "hsl(228 22% 10% / 0.8)", backdropFilter: "blur(20px)", border: "1px solid hsl(225 18% 16% / 0.8)" }}
       >
         <div className="flex items-center gap-2 mb-3.5">
           <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-xs font-semibold text-foreground">Filters</span>
           {hasFilters && (
-            <button
-              onClick={clearFilters}
-              className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <button onClick={clearFilters} className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <X className="w-3 h-3" /> Clear
             </button>
           )}
@@ -133,10 +127,7 @@ export function Transactions() {
           {/* Type */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Type</label>
-            <div
-              className="flex rounded-xl overflow-hidden h-9"
-              style={{ border: "1px solid hsl(225 18% 18%)", background: "hsl(230 25% 7%)" }}
-            >
+            <div className="flex rounded-xl overflow-hidden h-9" style={{ border: "1px solid hsl(225 18% 18%)", background: "hsl(230 25% 7%)" }}>
               {(["all", "income", "expense"] as const).map(t => (
                 <button
                   key={t}
@@ -145,16 +136,8 @@ export function Transactions() {
                   style={
                     type === t
                       ? {
-                          background: t === "income"
-                            ? "hsl(160 80% 50% / 0.2)"
-                            : t === "expense"
-                            ? "hsl(0 75% 58% / 0.2)"
-                            : "hsl(225 18% 20%)",
-                          color: t === "income"
-                            ? "hsl(160 80% 55%)"
-                            : t === "expense"
-                            ? "hsl(0 75% 65%)"
-                            : "hsl(210 40% 97%)",
+                          background: t === "income" ? "hsl(160 80% 50% / 0.2)" : t === "expense" ? "hsl(0 75% 58% / 0.2)" : "hsl(225 18% 20%)",
+                          color: t === "income" ? "hsl(160 80% 55%)" : t === "expense" ? "hsl(0 75% 65%)" : "hsl(210 40% 97%)",
                         }
                       : { color: "hsl(215 20% 50%)" }
                   }
@@ -168,11 +151,7 @@ export function Transactions() {
           {/* Category */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Category</label>
-            <select
-              value={category || "__all__"}
-              onChange={e => setCategory(e.target.value === "__all__" ? "" : e.target.value)}
-              style={inputStyle}
-            >
+            <select value={category || "__all__"} onChange={e => setCategory(e.target.value === "__all__" ? "" : e.target.value)} style={inputStyle}>
               <option value="__all__">All categories</option>
               {categories?.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -181,23 +160,13 @@ export function Transactions() {
           {/* From */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">From date</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={e => setDateFrom(e.target.value)}
-              style={inputStyle}
-            />
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={inputStyle} />
           </div>
 
           {/* To */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">To date</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={e => setDateTo(e.target.value)}
-              style={inputStyle}
-            />
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={inputStyle} />
           </div>
         </div>
       </div>
@@ -205,11 +174,7 @@ export function Transactions() {
       {/* List */}
       <div
         className="rounded-2xl overflow-hidden"
-        style={{
-          background: "hsl(228 22% 10% / 0.8)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid hsl(225 18% 16% / 0.8)",
-        }}
+        style={{ background: "hsl(228 22% 10% / 0.8)", backdropFilter: "blur(20px)", border: "1px solid hsl(225 18% 16% / 0.8)" }}
       >
         {isLoading ? (
           <div className="divide-y divide-[hsl(225_18%_14%)]">
@@ -226,25 +191,14 @@ export function Transactions() {
           </div>
         ) : !transactions?.length ? (
           <div className="py-20 flex flex-col items-center gap-3 text-muted-foreground">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-1"
-              style={{ background: "hsl(225 18% 14%)", border: "1px solid hsl(225 18% 20%)" }}
-            >
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-1" style={{ background: "hsl(225 18% 14%)", border: "1px solid hsl(225 18% 20%)" }}>
               <SlidersHorizontal className="w-7 h-7 opacity-30" />
             </div>
             <p className="font-semibold text-foreground text-sm">No transactions found</p>
-            <p className="text-sm text-center max-w-xs">
-              {hasFilters ? "Try adjusting your filters." : "Add your first transaction to get started."}
-            </p>
+            <p className="text-sm text-center max-w-xs">{hasFilters ? "Try adjusting your filters." : "Add your first transaction to get started."}</p>
             {!hasFilters && (
               <Link href="/add">
-                <button
-                  className="mt-2 px-4 py-2 rounded-xl text-sm font-semibold"
-                  style={{
-                    background: "linear-gradient(135deg, hsl(160 80% 50%), hsl(160 80% 42%))",
-                    color: "hsl(230 25% 6%)",
-                  }}
-                >
+                <button className="mt-2 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg, hsl(160 80% 50%), hsl(160 80% 42%))", color: "hsl(230 25% 6%)" }}>
                   Add transaction
                 </button>
               </Link>
@@ -252,21 +206,17 @@ export function Transactions() {
           </div>
         ) : (
           <div className="divide-y divide-[hsl(225_18%_13%)]">
-            {transactions.map((tx, idx) => {
+            {transactions.map((tx) => {
               const colors = typeColors[tx.type];
               return (
                 <div
                   key={tx.id}
                   className="group flex items-center justify-between px-5 py-3.5 transition-colors duration-150"
-                  style={{ animationDelay: `${idx * 30}ms` }}
                   onMouseEnter={e => (e.currentTarget.style.background = "hsl(225 18% 13% / 0.6)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: colors.bg }}
-                    >
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: colors.bg }}>
                       {tx.type === "income"
                         ? <TrendingUp className="w-4 h-4" style={{ color: colors.icon }} />
                         : <TrendingDown className="w-4 h-4" style={{ color: colors.icon }} />}
@@ -274,7 +224,7 @@ export function Transactions() {
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{tx.category}</p>
                       <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                        <span>{format(new Date(tx.date), "MMM d, yyyy")}</span>
+                        <span>{dateFormat(new Date(tx.date), "MMM d, yyyy")}</span>
                         {tx.note && (
                           <>
                             <span className="opacity-30">·</span>
@@ -286,25 +236,16 @@ export function Transactions() {
                   </div>
 
                   <div className="flex items-center gap-2.5 shrink-0 ml-4">
-                    <span
-                      className="text-sm font-display font-bold num"
-                      style={{ color: colors.icon }}
-                    >
-                      {tx.type === "income" ? "+" : "−"}{formatCurrency(tx.amount)}
+                    <span className="text-sm font-display font-bold num" style={{ color: colors.icon }}>
+                      {tx.type === "income" ? "+" : "−"}{format(tx.amount)}
                     </span>
                     <button
                       onClick={() => deleteTx.mutate({ id: tx.id })}
                       disabled={deleteTx.isPending}
                       className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 active:scale-90"
                       style={{ color: "hsl(215 20% 45%)" }}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLButtonElement).style.color = "hsl(0 75% 65%)";
-                        (e.currentTarget as HTMLButtonElement).style.background = "hsl(0 75% 58% / 0.1)";
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLButtonElement).style.color = "hsl(215 20% 45%)";
-                        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "hsl(0 75% 65%)"; (e.currentTarget as HTMLButtonElement).style.background = "hsl(0 75% 58% / 0.1)"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "hsl(215 20% 45%)"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

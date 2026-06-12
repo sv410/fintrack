@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/lib/format";
+import { useCurrency } from "@/contexts/currency-context";
 import {
   useGetSummary, getGetSummaryQueryKey,
   useGetSpendingByCategory, getGetSpendingByCategoryQueryKey,
@@ -24,7 +24,7 @@ const COLORS = [
   "hsl(180 60% 52%)",
 ];
 
-const ChartTooltip = ({ active, payload, label }: any) => {
+const ChartTooltip = ({ active, payload, label, format }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div
@@ -37,7 +37,7 @@ const ChartTooltip = ({ active, payload, label }: any) => {
       }}
     >
       <p className="font-semibold text-foreground mb-0.5">{label}</p>
-      <p className="text-primary font-bold">{formatCurrency(payload[0].value)}</p>
+      <p className="text-primary font-bold">{format(payload[0].value)}</p>
       <p className="text-muted-foreground text-xs mt-0.5">{payload[0].payload.count} transactions</p>
     </div>
   );
@@ -50,6 +50,7 @@ function SkeletonCard() {
 }
 
 export function Dashboard() {
+  const { format } = useCurrency();
   const { data: summary, isLoading: loadingSum } = useGetSummary({ query: { queryKey: getGetSummaryQueryKey() } });
   const { data: spending, isLoading: loadingSpend } = useGetSpendingByCategory({ query: { queryKey: getGetSpendingByCategoryQueryKey() } });
   const { data: insight, isLoading: loadingInsight } = useGetInsight({ query: { queryKey: getGetInsightQueryKey() } });
@@ -69,33 +70,27 @@ export function Dashboard() {
               Live
             </span>
           </div>
-          <h1 className="text-3xl font-display font-extrabold text-foreground">
-            Financial Overview
-          </h1>
+          <h1 className="text-3xl font-display font-extrabold text-foreground">Financial Overview</h1>
           <p className="text-muted-foreground mt-1 text-sm">Your money, at a glance.</p>
         </div>
         <Link href="/add">
           <button
             className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95"
-            style={{
-              background: "hsl(225 18% 14%)",
-              border: "1px solid hsl(225 18% 20%)",
-              color: "hsl(var(--foreground))",
-            }}
+            style={{ background: "hsl(225 18% 14%)", border: "1px solid hsl(225 18% 20%)", color: "hsl(var(--foreground))" }}
           >
             New entry <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
         </Link>
       </div>
 
-      {/* Main stat cards */}
+      {/* Stat cards */}
       {loadingSum ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : summary ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Net Balance — hero card */}
+          {/* Net Balance */}
           <div
             className="sm:col-span-2 lg:col-span-1 rounded-2xl p-5 relative overflow-hidden card-hover"
             style={{
@@ -112,7 +107,7 @@ export function Dashboard() {
             />
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Net Balance</p>
             <p className={cn("text-3xl font-display font-extrabold num", summary.netBalance >= 0 ? "text-income" : "text-expense")}>
-              {formatCurrency(summary.netBalance)}
+              {format(summary.netBalance)}
             </p>
             <p className="text-xs text-muted-foreground mt-2">{summary.transactionCount} transactions total</p>
           </div>
@@ -125,7 +120,7 @@ export function Dashboard() {
                 <TrendingUp className="w-3.5 h-3.5 text-income" />
               </div>
             </div>
-            <p className="text-2xl font-display font-bold text-foreground num">{formatCurrency(summary.totalIncome)}</p>
+            <p className="text-2xl font-display font-bold text-foreground num">{format(summary.totalIncome)}</p>
             {savingsPct && <p className="text-xs mt-2" style={{ color: "hsl(160 80% 55%)" }}>Saving {savingsPct}%</p>}
           </div>
 
@@ -137,7 +132,7 @@ export function Dashboard() {
                 <TrendingDown className="w-3.5 h-3.5 text-expense" />
               </div>
             </div>
-            <p className="text-2xl font-display font-bold text-foreground num">{formatCurrency(summary.totalExpense)}</p>
+            <p className="text-2xl font-display font-bold text-foreground num">{format(summary.totalExpense)}</p>
             <p className="text-xs text-muted-foreground mt-2">All-time spending</p>
           </div>
 
@@ -162,11 +157,7 @@ export function Dashboard() {
         {/* Bar chart */}
         <div
           className="lg:col-span-3 rounded-2xl p-6"
-          style={{
-            background: "hsl(228 22% 10% / 0.8)",
-            backdropFilter: "blur(20px)",
-            border: "1px solid hsl(225 18% 16% / 0.8)",
-          }}
+          style={{ background: "hsl(228 22% 10% / 0.8)", backdropFilter: "blur(20px)", border: "1px solid hsl(225 18% 16% / 0.8)" }}
         >
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -197,9 +188,9 @@ export function Dashboard() {
                   <YAxis
                     tick={{ fill: "hsl(215 20% 45%)", fontSize: 11 }}
                     axisLine={false} tickLine={false}
-                    tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}`}
+                    tickFormatter={v => format(v)}
                   />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill: "hsl(225 18% 16% / 0.5)", radius: 6 }} />
+                  <Tooltip content={<ChartTooltip format={format} />} cursor={{ fill: "hsl(225 18% 16% / 0.5)", radius: 6 }} />
                   <Bar dataKey="total" radius={[6, 6, 0, 0]}>
                     {spending.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -211,20 +202,19 @@ export function Dashboard() {
           )}
         </div>
 
-        {/* Right: Income vs Expense + Insight */}
+        {/* Right: mini cards + insight */}
         <div className="lg:col-span-2 flex flex-col gap-4">
-          {/* Mini income/expense */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "Income", value: summary?.totalIncome, color: "hsl(160 80% 50%)", colorBg: "hsl(160 80% 50% / 0.1)", icon: TrendingUp },
-              { label: "Expenses", value: summary?.totalExpense, color: "hsl(0 75% 58%)", colorBg: "hsl(0 75% 58% / 0.1)", icon: TrendingDown },
-            ].map(({ label, value, color, colorBg, icon: Icon }) => (
+              { label: "Income", value: summary?.totalIncome, color: "hsl(160 80% 50%)", bg: "hsl(160 80% 50% / 0.1)", icon: TrendingUp },
+              { label: "Expenses", value: summary?.totalExpense, color: "hsl(0 75% 58%)", bg: "hsl(0 75% 58% / 0.1)", icon: TrendingDown },
+            ].map(({ label, value, color, bg, icon: Icon }) => (
               <div
                 key={label}
                 className="rounded-2xl p-4"
                 style={{ background: "hsl(228 22% 10% / 0.8)", backdropFilter: "blur(20px)", border: "1px solid hsl(225 18% 16% / 0.8)" }}
               >
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-3" style={{ background: colorBg }}>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-3" style={{ background: bg }}>
                   <Icon className="w-4 h-4" style={{ color }} />
                 </div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">{label}</p>
@@ -232,21 +222,17 @@ export function Dashboard() {
                   <div className="h-5 w-16 shimmer rounded" />
                 ) : (
                   <p className="text-lg font-display font-bold num" style={{ color }}>
-                    {formatCurrency(value ?? 0)}
+                    {format(value ?? 0)}
                   </p>
                 )}
               </div>
             ))}
           </div>
 
-          {/* Insight card */}
+          {/* Insight */}
           <div
             className="flex-1 rounded-2xl p-5"
-            style={{
-              background: "hsl(228 22% 10% / 0.8)",
-              backdropFilter: "blur(20px)",
-              border: "1px solid hsl(225 18% 16% / 0.8)",
-            }}
+            style={{ background: "hsl(228 22% 10% / 0.8)", backdropFilter: "blur(20px)", border: "1px solid hsl(225 18% 16% / 0.8)" }}
           >
             <div className="flex items-center gap-2 mb-4">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "hsl(280 65% 68% / 0.12)" }}>
@@ -288,9 +274,7 @@ export function Dashboard() {
                     )}>
                       {insight.type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
                     </p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {insight.message}
-                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{insight.message}</p>
                   </div>
                 </div>
               </div>
