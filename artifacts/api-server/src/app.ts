@@ -8,33 +8,36 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 const isProduction = process.env.NODE_ENV === "production";
+const isVercel = Boolean(process.env.VERCEL);
 
-app.use(
-  pinoHttp({
-    logger,
-    serializers: {
-      req(req) {
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
+if (!isVercel) {
+  app.use(
+    pinoHttp({
+      logger,
+      serializers: {
+        req(req) {
+          return {
+            id: req.id,
+            method: req.method,
+            url: req.url?.split("?")[0],
+          };
+        },
+        res(res) {
+          return {
+            statusCode: res.statusCode,
+          };
+        },
       },
-      res(res) {
-        return {
-          statusCode: res.statusCode,
-        };
-      },
-    },
-  }),
-);
+    }),
+  );
+}
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
-if (isProduction && !process.env.VERCEL) {
+if (isProduction && !isVercel) {
   const frontendDir = path.resolve(
     fileURLToPath(import.meta.url),
     "../../../finance-tracker/dist/public",
