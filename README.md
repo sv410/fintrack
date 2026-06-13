@@ -1,206 +1,75 @@
 # Fintrack — Mini Fintech Dashboard
 
-> Take-Home Assignment: Personal Finance Tracker
+Personal finance tracker: log transactions, filter history, view summaries, charts, and spending insights.
 
-A sleek, full-stack personal finance tracker built with a modern dark fintech aesthetic. Log transactions, filter your history, view live summaries, and get rule-based spending insights — all in one place.
-
----
-
-## Live Demo
-
-| | URL |
-|---|---|
-| **Frontend** | [https://fintrack-3yxb.onrender.com](https://fintrack-3yxb.onrender.com) |
-| **API** | [https://fintracks-v8gr.onrender.com/api/healthz](https://fintracks-v8gr.onrender.com/api/healthz) |
-| **Repository** | [https://github.com/sv410/fintrack](https://github.com/sv410/fintrack) |
-
----
-
-## Deploy on Vercel (recommended)
-
-One Vercel project hosts the **React UI** and **Express API** on the same domain. The repo includes a `vercel.json` with the correct settings.
-
-### Step 1 — PostgreSQL database
-
-Use a hosted Postgres provider (pick one):
-
-- **[Neon](https://neon.tech)** (free tier, works well with Vercel)
-- **[Supabase](https://supabase.com)** (free tier)
-- **Vercel Postgres** (Storage tab in Vercel dashboard)
-
-Copy the **connection string** (starts with `postgresql://`).
-
-### Step 2 — Import project on Vercel
-
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Import **sv410/fintrack** from GitHub
-3. Vercel reads `vercel.json` automatically — confirm these settings:
-
-| Field | Value |
-|---|---|
-| **Framework Preset** | Other |
-| **Build Command** | `pnpm run build:vercel` |
-| **Output Directory** | `artifacts/finance-tracker/dist/public` |
-| **Install Command** | `pnpm install --frozen-lockfile` |
-
-### Step 3 — Environment variables
-
-Add in **Settings → Environment Variables**:
-
-| Key | Value |
-|---|---|
-| `DATABASE_URL` | Your PostgreSQL connection string |
-| `NODE_ENV` | `production` |
-
-Apply to **Production**, **Preview**, and **Development**.
-
-### Step 4 — Deploy
-
-Click **Deploy**. The build creates DB tables automatically when `DATABASE_URL` is set.
-
-### Test after deploy
-
-| URL | Expected |
-|---|---|
-| `https://<your-app>.vercel.app/` | Finance Tracker UI |
-| `https://<your-app>.vercel.app/api/healthz` | `{"status":"ok"}` |
-
----
-
-## Deploy on Render (one service — frontend + backend)
-
-A **Static Site cannot run the backend** (Express + PostgreSQL). Use **one Web Service** instead — it serves the React UI and the `/api` routes on the same URL.
-
-### Step 1 — PostgreSQL
-
-1. **New → PostgreSQL** (Free)
-2. Copy the **Internal Database URL**
-
-### Step 2 — Web Service (not Static Site)
-
-Click **New → Web Service** (Node), connect `sv410/fintrack`, branch `main`:
-
-| Field | Value |
-|---|---|
-| **Name** | `fintrack` |
-| **Root Directory** | *(leave empty)* |
-| **Build Command** | `pnpm install --frozen-lockfile && pnpm run build:full` |
-| **Start Command** | `pnpm start` |
-| **Health Check Path** | `/api/healthz` |
-
-**Environment variables:**
-
-| Key | Value |
-|---|---|
-| `DATABASE_URL` | Internal Database URL from step 1 |
-| `NODE_ENV` | `production` |
-
-Deploy. Your full app is at `https://fintrack.onrender.com` (UI + API).
-
-- UI: `https://<your-app>.onrender.com/`
-- API health: `https://<your-app>.onrender.com/api/healthz`
-
-> `build:full` builds the frontend, builds the API, and creates DB tables when `DATABASE_URL` is set.
-
-### Do not use Static Site for this project
-
-If you only use **New → Static Site**, you get HTML/CSS/JS only — no database, no `/api`, no transactions. Delete any Static Site and use **Web Service** instead.
+**Repository:** [https://github.com/sv410/fintrack](https://github.com/sv410/fintrack)
 
 ---
 
 ## Features
 
-| Requirement | Implementation |
-|---|---|
-| **Add transaction** | Amount, category, type (income/expense), date, optional note — with animated form and contextual color |
-| **Filter transactions** | By type, category, and date range (From / To) |
-| **Summary view** | Total income, total expenses, net balance, top spending category — live stat cards |
-| **Chart** | Bar chart of spending by category (Recharts) |
-| **Insight** | Rule-based engine: flags overspending (>90% of income), praises good savings (>20%), highlights dominant categories |
-| **Currency switcher** | USD, INR, EUR, GBP, JPY, AUD, CAD, CHF, SGD, AED — persists via localStorage |
+- Add transactions (amount, category, income/expense, date, optional note)
+- Filter transactions by category, type, and date range
+- Summary: total income, expenses, net balance, top spending category
+- Bar chart of spending by category
+- Rule-based spending insights
+- Currency switcher (USD, INR, EUR, and more)
 
 ---
 
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS v4, Recharts |
-| **Backend** | Node.js 24, Express 5, TypeScript |
-| **Database** | PostgreSQL + Drizzle ORM |
-| **Validation** | Zod v4 (shared schema, server + client) |
-| **API contract** | OpenAPI 3.1 spec → Orval codegen (React Query hooks + Zod schemas) |
-| **Routing** | Wouter (client), Express 5 (server) |
-| **Monorepo** | pnpm workspaces |
-
----
-
-## Project Structure
-
-```
-fintrack/
-├── artifacts/
-│   ├── api-server/          # Express 5 REST API (port 8080, path /api)
-│   └── finance-tracker/     # React + Vite frontend (port 19051, path /)
-├── lib/
-│   ├── api-spec/            # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/    # Generated React Query hooks
-│   ├── api-zod/             # Generated Zod schemas
-│   └── db/                  # Drizzle ORM schema + migrations
-└── scripts/                 # Utility scripts (seed data etc.)
-```
-
----
-
-## Setup Instructions
+## Setup
 
 ### Prerequisites
 
 - Node.js 20+
 - pnpm 9+
-- PostgreSQL (local or hosted)
+- A PostgreSQL database (use [Neon](https://neon.tech) free tier)
 
-### 1. Clone
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/sv410/fintrack.git
 cd fintrack
-```
-
-### 2. Install dependencies
-
-```bash
 pnpm install
 ```
 
-### 3. Configure environment
+### 2. Get your `DATABASE_URL`
 
-Copy `.env.example` to `.env` in the repo root and fill in your values:
+1. Go to [neon.tech](https://neon.tech) and create a free account
+2. Create a new project
+3. Copy the **connection string** (URI) — it looks like:
 
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/fintrack
-SESSION_SECRET=your-secret-here
+```
+postgresql://user:password@host.neon.tech/neondb?sslmode=require
 ```
 
-### 4. Push the database schema
+### 3. Create `.env` file
+
+In the project root, create a file named `.env`:
+
+```env
+DATABASE_URL=postgresql://user:password@host.neon.tech/neondb?sslmode=require
+```
+
+Replace the value with your actual Neon connection string.
+
+### 4. Create database tables
 
 ```bash
 pnpm run db:push
 ```
 
-Or set `DATABASE_URL` and run `pnpm run build:api` (schema push runs automatically when the env var is present).
-
-### 5. Start the API server
+### 5. Start the API (terminal 1)
 
 ```bash
 # Windows (PowerShell)
-$env:PORT='8080'; $env:DATABASE_URL='postgresql://user:password@localhost:5432/fintrack'; pnpm --filter @workspace/api-server run build; node artifacts/api-server/dist/index.mjs
+$env:PORT='8080'; pnpm --filter @workspace/api-server run build; node artifacts/api-server/dist/index.mjs
 
 # macOS / Linux
-PORT=8080 DATABASE_URL=postgresql://user:password@localhost:5432/fintrack pnpm --filter @workspace/api-server run dev
+PORT=8080 pnpm --filter @workspace/api-server run dev
 ```
 
-### 6. Start the frontend (new terminal)
+### 6. Start the frontend (terminal 2)
 
 ```bash
 # Windows (PowerShell)
@@ -211,46 +80,6 @@ PORT=19051 BASE_PATH=/ pnpm --filter @workspace/finance-tracker run dev
 ```
 
 Open **http://localhost:19051** in your browser.
-
----
-
-## API Endpoints
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/transactions` | List transactions (filter by type, category, date range) |
-| `POST` | `/api/transactions` | Create a transaction |
-| `DELETE` | `/api/transactions/:id` | Delete a transaction |
-| `GET` | `/api/summary` | Total income, expense, net balance, top category, count |
-| `GET` | `/api/summary/by-category` | Spending breakdown per category |
-| `GET` | `/api/summary/insight` | Rule-based spending insight |
-| `GET` | `/api/categories` | All distinct categories in the DB |
-
----
-
-## Codegen (after OpenAPI spec changes)
-
-```bash
-pnpm --filter @workspace/api-spec run codegen
-```
-
----
-
-## Typecheck
-
-```bash
-pnpm run typecheck
-```
-
----
-
-## Design Decisions
-
-- **Contract-first API**: OpenAPI spec is the single source of truth; React Query hooks and Zod schemas are generated, never handwritten.
-- **Shared Zod schemas**: The same validation schemas run on both server (input validation) and client (form validation), eliminating drift.
-- **Glassmorphism UI**: Dark background with `backdrop-filter: blur` cards, gradient mesh background, and `Plus Jakarta Sans` display font for a premium fintech feel.
-- **Currency context**: Selected currency is stored in `localStorage` so the preference survives page reloads without a server round-trip.
-- **Rule-based insight engine**: Deliberately simple — a pure SQL + JS function that reads income/expense ratios and identifies dominant categories, with no ML dependency.
 
 ---
 
