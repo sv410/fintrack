@@ -16,6 +16,57 @@ A sleek, full-stack personal finance tracker built with a modern dark fintech ae
 
 ---
 
+## Deploy on Vercel (recommended)
+
+One Vercel project hosts the **React UI** and **Express API** on the same domain. The repo includes a `vercel.json` with the correct settings.
+
+### Step 1 — PostgreSQL database
+
+Use a hosted Postgres provider (pick one):
+
+- **[Neon](https://neon.tech)** (free tier, works well with Vercel)
+- **[Supabase](https://supabase.com)** (free tier)
+- **Vercel Postgres** (Storage tab in Vercel dashboard)
+
+Copy the **connection string** (starts with `postgresql://`).
+
+### Step 2 — Import project on Vercel
+
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import **sv410/fintrack** from GitHub
+3. Vercel reads `vercel.json` automatically — confirm these settings:
+
+| Field | Value |
+|---|---|
+| **Framework Preset** | Other |
+| **Build Command** | `pnpm run build:vercel` |
+| **Output Directory** | `artifacts/finance-tracker/dist/public` |
+| **Install Command** | `pnpm install --frozen-lockfile` |
+
+### Step 3 — Environment variables
+
+Add in **Settings → Environment Variables**:
+
+| Key | Value |
+|---|---|
+| `DATABASE_URL` | Your PostgreSQL connection string |
+| `NODE_ENV` | `production` |
+
+Apply to **Production**, **Preview**, and **Development**.
+
+### Step 4 — Deploy
+
+Click **Deploy**. The build creates DB tables automatically when `DATABASE_URL` is set.
+
+### Test after deploy
+
+| URL | Expected |
+|---|---|
+| `https://<your-app>.vercel.app/` | Finance Tracker UI |
+| `https://<your-app>.vercel.app/api/healthz` | `{"status":"ok"}` |
+
+---
+
 ## Deploy on Render (one service — frontend + backend)
 
 A **Static Site cannot run the backend** (Express + PostgreSQL). Use **one Web Service** instead — it serves the React UI and the `/api` routes on the same URL.

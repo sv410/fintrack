@@ -34,7 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
-if (isProduction) {
+if (isProduction && !process.env.VERCEL) {
   const frontendDir = path.resolve(
     fileURLToPath(import.meta.url),
     "../../../finance-tracker/dist/public",
