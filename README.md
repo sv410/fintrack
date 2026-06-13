@@ -40,7 +40,7 @@ pnpm install
 3. Copy the **connection string** (URI) — it looks like:
 
 ```
-postgresql://user:password@host.neon.tech/neondb?sslmode=require
+postgresql://neondb_owner:npg_IoFSPUWR1a6d@ep-muddy-sky-atu54amx-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
 
 ### 3. Create `.env` file
@@ -48,7 +48,7 @@ postgresql://user:password@host.neon.tech/neondb?sslmode=require
 In the project root, create a file named `.env`:
 
 ```env
-DATABASE_URL=postgresql://user:password@host.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgresql://neondb_owner:npg_IoFSPUWR1a6d@ep-muddy-sky-atu54amx-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
 
 Replace the value with your actual Neon connection string.

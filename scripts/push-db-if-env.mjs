@@ -1,3 +1,4 @@
+import "./load-env.mjs";
 import { execSync } from "node:child_process";
 
 if (!process.env.DATABASE_URL) {
