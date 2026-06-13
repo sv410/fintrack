@@ -1,8 +1,7 @@
-# Render Blueprint — https://render.com/docs/blueprint-spec
+# Single-service deploy on Render (frontend + API on one URL)
 #
-# Deploy: Render Dashboard → New → Blueprint → connect sv410/fintrack
-#
-# Or configure each service manually (see README → Deploy on Render).
+# Create: New → Web Service (NOT Static Site) → connect sv410/fintrack
+# Also create: New → PostgreSQL → link DATABASE_URL to the web service
 
 databases:
   - name: fintrack-db
@@ -11,12 +10,11 @@ databases:
     user: fintrack
 
 services:
-  # Express API (Web Service — Node)
   - type: web
-    name: fintracks
+    name: fintrack
     runtime: node
     plan: free
-    buildCommand: pnpm install --frozen-lockfile && pnpm run build:api
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build:full
     startCommand: pnpm start
     healthCheckPath: /api/healthz
     envVars:
@@ -26,20 +24,3 @@ services:
         fromDatabase:
           name: fintrack-db
           property: connectionString
-
-  # React frontend (Static Site)
-  - type: web
-    name: fintrack
-    runtime: static
-    buildCommand: pnpm install --frozen-lockfile && pnpm run build:static
-    staticPublishPath: artifacts/finance-tracker/dist/public
-    envVars:
-      - key: BASE_PATH
-        value: /
-    routes:
-      - type: rewrite
-        source: /api/*
-        destination: https://fintracks-v8gr.onrender.com/api/*
-      - type: rewrite
-        source: /*
-        destination: /index.html

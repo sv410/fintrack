@@ -16,23 +16,24 @@ A sleek, full-stack personal finance tracker built with a modern dark fintech ae
 
 ---
 
-## Deploy on Render
+## Deploy on Render (one service — frontend + backend)
 
-This app needs **three resources** on [Render](https://render.com): a PostgreSQL database, a **Web Service** (API), and a **Static Site** (frontend).
+A **Static Site cannot run the backend** (Express + PostgreSQL). Use **one Web Service** instead — it serves the React UI and the `/api` routes on the same URL.
 
-### 1. PostgreSQL database
+### Step 1 — PostgreSQL
 
-1. **New → PostgreSQL** (Free plan)
-2. Name it `fintrack-db`
-3. Copy the **Internal Database URL** (use this for `DATABASE_URL`)
+1. **New → PostgreSQL** (Free)
+2. Copy the **Internal Database URL**
 
-### 2. Web Service — API (`fintracks`)
+### Step 2 — Web Service (not Static Site)
 
-| Setting | Value |
+Click **New → Web Service** (Node), connect `sv410/fintrack`, branch `main`:
+
+| Field | Value |
 |---|---|
-| **Type** | Web Service |
-| **Runtime** | Node |
-| **Build Command** | `pnpm install --frozen-lockfile && pnpm run build:api` |
+| **Name** | `fintrack` |
+| **Root Directory** | *(leave empty)* |
+| **Build Command** | `pnpm install --frozen-lockfile && pnpm run build:full` |
 | **Start Command** | `pnpm start` |
 | **Health Check Path** | `/api/healthz` |
 
@@ -43,36 +44,16 @@ This app needs **three resources** on [Render](https://render.com): a PostgreSQL
 | `DATABASE_URL` | Internal Database URL from step 1 |
 | `NODE_ENV` | `production` |
 
-> `build:api` builds the Express server and auto-runs `db:push` when `DATABASE_URL` is set.
+Deploy. Your full app is at `https://fintrack.onrender.com` (UI + API).
 
-Verify: open `https://<your-api>.onrender.com/api/healthz` → `{"status":"ok"}`
+- UI: `https://<your-app>.onrender.com/`
+- API health: `https://<your-app>.onrender.com/api/healthz`
 
-### 3. Static Site — Frontend (`fintrack`)
+> `build:full` builds the frontend, builds the API, and creates DB tables when `DATABASE_URL` is set.
 
-| Setting | Value |
-|---|---|
-| **Type** | Static Site |
-| **Build Command** | `pnpm install --frozen-lockfile && pnpm run build:static` |
-| **Publish Directory** | `artifacts/finance-tracker/dist/public` |
+### Do not use Static Site for this project
 
-**Environment variables:**
-
-| Key | Value |
-|---|---|
-| `BASE_PATH` | `/` |
-
-**Redirects / Rewrites** (Settings → Redirects/Rewrites):
-
-| Source | Destination | Action |
-|---|---|---|
-| `/api/*` | `https://fintracks-v8gr.onrender.com/api/*` | Rewrite |
-| `/*` | `/index.html` | Rewrite |
-
-> Replace the API URL above if your Web Service has a different hostname.
-
-### One-click deploy (optional)
-
-Use **New → Blueprint** and connect `sv410/fintrack`. The repo includes a `render.yaml` with these settings preconfigured.
+If you only use **New → Static Site**, you get HTML/CSS/JS only — no database, no `/api`, no transactions. Delete any Static Site and use **Web Service** instead.
 
 ---
 
