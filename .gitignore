@@ -52,6 +52,3 @@ Thumbs.db
 .env
 .env.*
 !.env.example
-
-# Vercel build output
-api/index.js
