@@ -1,8 +1,8 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
-import * as schema from "./schema";
+import type pg from "pg";
+import { createNeonDb } from "./neon-db";
+import { createPgDb } from "./pg-db";
 
-const { Pool } = pg;
+export * from "./schema";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -12,14 +12,12 @@ if (!connectionString) {
   );
 }
 
-const isLocal =
-  connectionString.includes("localhost") ||
-  connectionString.includes("127.0.0.1");
+const useNeon = Boolean(process.env.VERCEL);
 
-export const pool = new Pool({
-  connectionString,
-  ssl: isLocal ? undefined : { rejectUnauthorized: false },
-});
-export const db = drizzle(pool, { schema });
+const pgResult = useNeon ? null : createPgDb(connectionString);
 
-export * from "./schema";
+export const db = useNeon
+  ? createNeonDb(connectionString)
+  : pgResult!.db;
+
+export const pool: pg.Pool | undefined = pgResult?.pool;

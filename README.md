@@ -40,7 +40,7 @@ pnpm install
 3. Copy the **connection string** (URI) — it looks like:
 
 ```
-postgresql://neondb_owner:npg_IoFSPUWR1a6d@ep-muddy-sky-atu54amx-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
 ```
 
 ### 3. Create `.env` file
@@ -48,7 +48,7 @@ postgresql://neondb_owner:npg_IoFSPUWR1a6d@ep-muddy-sky-atu54amx-pooler.c-9.us-e
 In the project root, create a file named `.env`:
 
 ```env
-DATABASE_URL=postgresql://neondb_owner:npg_IoFSPUWR1a6d@ep-muddy-sky-atu54amx-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=
 ```
 
 Replace the value with your actual Neon connection string.
@@ -80,6 +80,22 @@ PORT=19051 BASE_PATH=/ pnpm --filter @workspace/finance-tracker run dev
 ```
 
 Open **http://localhost:19051** in your browser.
+
+---
+
+## Deploy on Vercel (UI + backend on one URL)
+
+1. Import repo at [vercel.com/new](https://vercel.com/new) — **Root Directory must be empty**
+2. Add environment variables in Vercel dashboard:
+
+| Key | Value |
+|---|---|
+| `DATABASE_URL` | Your Neon connection string |
+| `NODE_ENV` | `production` |
+
+3. Deploy. Test: `https://your-app.vercel.app/api/healthz` → `{"status":"ok"}`
+
+> Your local `.env` is **not** uploaded. You must paste `DATABASE_URL` in Vercel settings.
 
 ---
 
