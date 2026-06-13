@@ -1,3 +1,3 @@
-import app from "../artifacts/api-server/dist/vercel.mjs";
+import app from "../artifacts/api-server/dist/app.mjs";
 
 export default app;
